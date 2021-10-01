@@ -1,0 +1,645 @@
+import subprocess as sp
+import pymysql
+import pymysql.cursors
+from getpass import getpass
+from datetime import datetime
+from datetime import date
+
+def UpdateBloodCost():
+    var0 = input("Enter Plasma_bag_number whose cost is to be Updated: ")
+    bloodId = int(var0)
+    var1 = input("Enter updated cost: ")
+    new_cost = int(var1)
+    query0 = "Select count(*) AS cnt from BLOOD where Plasma_bag_number = %d" % (bloodId)
+    query_duty = "UPDATE BLOOD_COST SET cost =  %d where plasma_bag_number = %d" % (new_cost, bloodId)
+
+    try:
+        executeQuery(query0)
+        val = cur.fetchall()
+        val = val[0]
+        val = val['cnt']
+        if (val == 0):
+            print("Input plasma_bag_number does not exist. Please enter valid input")
+            return
+        executeQuery(query_duty)
+        print("Blood cost updated sucessfully")
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def executeQuery(query):
+    cur.execute(query)
+    con.commit()
+
+
+def deleteBlood():
+    var0 = input("Enter Plasma bag number to be deleted: ")
+    delete_id = int(var0)
+    query0 = "Select count(*) AS cnt from BLOOD where plasma_bag_number = %d" % (delete_id)
+    query1 = "DELETE FROM BLOOD where plasma_bag_number = %d" % (delete_id)
+
+    try:
+        cur.execute(query0)
+        val = cur.fetchall()
+        val = val[0]
+        val = val['cnt']
+        if (val != 0):
+            executeQuery(query1)
+            print("Deleted successfully")
+        else:
+            print("Input plasma_bag_number does not exist.Please enter a valid plasma_bag_number")
+            return
+
+    except Exception as e:
+        excepting(e)
+    return
+
+
+def addBlood():
+    try:
+        # Takes emplyee details as input
+        row = {}
+        print("Enter new Plasma details: ")
+        var0 = input("plasma_bag_number: ")
+        row["plasma_bag_number"] = int(var0)
+        row["blood_type"] = input("Plasma blood_type: ")
+        var1 = input("blood_amount: ")
+        row["blood_amount"] = int(var1)
+        var2 = input("platelets_count (in thousands): ")
+        row["platelets_count"] = float(var2)
+        query = "INSERT INTO BLOOD(plasma_bag_number,blood_type,blood_amount,platelets_count) VALUES('%d', '%s', '%d', '%0.1f')" % (
+        row["plasma_bag_number"], row["blood_type"], row["blood_amount"], row["platelets_count"])
+        executeQuery(query)
+        print("Inserted Into Database")
+
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def addPaymentTnx():
+    try:
+        row = {}
+        print("Enter transaction details: ")
+        var0 = input("rec_id: ")
+        row["rec_id"] = int(var0)
+        var1 = input("Payment Amount: ")
+        row["payment_amt"] = int(var1)
+        timenow = datetime.now()
+        current_time = timenow.strftime("%d/%m/%Y %H:%M:%S")
+        print("Time of Txn =", current_time)
+        row["payment_time"] = current_time
+        query = "INSERT INTO PAYMENT_TRANSACTION(rec_id,payment_amt,payment_time) VALUES('%d', %d', '%s')" % (
+        row["rec_id"], row["payment_amt"], row["payment_time"])
+        executeQuery(query)
+        print("Inserted Into Database")
+
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def addDonorInfo():
+    try:
+        row = {}
+        print("Enter new donor's details: ")
+        rawname = input("Name (Fname Lname): ")
+        name = (rawname).split(' ')
+        row["fname"] = name[0]
+        row["lname"] = name[1]
+        var0 = input("Donor_id: ")
+        row["donor_id"] = int(var0)
+        row["blood_type"] = input("Plasma Blood_type: ")
+        dob = (input("DOB (YYYY-MM-DD): ")).split('-')
+        row["dOB"] = dob[0] + '-' + dob[1] + '-' + dob[2]
+        print("Age:", calculateAge(date(int(dob[0]), int(dob[1]), int(dob[2]))), "years")
+        row["age"] = calculateAge(date(int(dob[0]), int(dob[1]), int(dob[2])))
+        row["sex"] = input("Sex: ")
+        var3 = input("phone_no: ")
+        row["phone_no"] = var3
+        var7 = input("Address: ")
+        row["address"] = var7
+
+        query = "INSERT INTO DONOR_INFO(donor_id,blood_type,phone_no,dOB,age,sex,fname,lname,address) VALUES('%d', '%s', '%s','%s','%d','%s','%s','%s','%s')" % (
+        row["donor_id"], row["blood_type"], row["phone_no"], row["dOB"], row["age"], row["sex"], row["fname"],
+        row["lname"], row["address"])
+        executeQuery(query)
+
+        print("Inserted Into Database")
+
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def addRecipient():
+    try:
+        row = {}
+        print("Enter new recipient's details: ")
+        rawname = input("Name (Fname Lname): ")
+        name = (rawname).split(' ')
+        row["fname"] = name[0]
+        row["lname"] = name[1]
+        var3 = input("Rec_id: ")
+        row["rec_id"] = int(var3)
+        row["blood_type"] = input("Plasma Blood_type: ")
+        var0 = input("Quantity_needed: ")
+        row["quantity_needed"] = int(var0)
+        row["date_of_request"] = input("Date of request (YYYY-MM-DD): ")
+        dob = (input("DOB (YYYY-MM-DD): ")).split('-')
+        row["dOB"] = dob[0] + '-' + dob[1] + '-' + dob[2]
+        print("Age:", calculateAge(date(int(dob[0]), int(dob[1]), int(dob[2]))), "years")
+        row["age"] = calculateAge(date(int(dob[0]), int(dob[1]), int(dob[2])))
+        row["sex"] = input("Sex: ")
+        var5 = input("Address: ")
+        row["address"] = var5
+        query = "INSERT INTO RECIPIENT(rec_id,blood_type,quantity_needed,date_of_request,fname,lname,dOB,sex,age,address) VALUES('%d', '%s', '%d','%s','%s','%s','%s','%s','%d','%s')" % (
+        row["rec_id"], row["blood_type"], row["quantity_needed"], row["date_of_request"], row["fname"], row["lname"],
+        row["dOB"], row["sex"], row["age"], row["address"])
+        executeQuery(query)
+
+        print("Inserted Into Database")
+
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def addDonor():
+    try:
+        row = {}
+        print("Enter new donation details: ")
+        var0 = input("Donor-id: ")
+        row["donor_id"] = int(var0)
+        row["date_of_donation"] = input("Date of donation (YYYY-MM-DD): ")
+        query = "INSERT INTO DONORS(donor_id,date_of_donation) VALUES('%d', '%s')" % (
+        row["donor_id"], row["date_of_donation"])
+        print(query)
+        executeQuery(query)
+
+        print("Inserted Into Database")
+
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def Supervisors():
+    try:
+        a = input("Enter supervisor name: ")
+        query = "select * FROM STAFF where supervisor='%s'" % (a)
+        executeQuery(query)
+        row = cur.fetchall()
+        print("Employees under Supervisor", a, "are:")
+        print(row)
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def hireStaff():
+    try:
+        # Takes emplyee details as input
+        row = {}
+        print("Enter new staff member's details: ")
+        row["fname"] = input("Name: ")
+        var0 = input("emp_id: ")
+        row["emp_id"] = int(var0)
+        row["supervisor"] = input("supervisor: ")
+        row["address1"] = input("address: ")
+        var1 = input("salary: ")
+        row["salary"] = int(var1)
+        var2 = input("phone_no: ")
+        row["phone_no"] = int(var2)
+        query = "INSERT INTO STAFF(emp_id,fname,supervisor, address1,phone_no,salary) VALUES('%d', '%s', '%s', '%s', '%d', '%d')" % (
+        row["emp_id"], row["fname"], row["supervisor"], row["address1"], row["phone_no"], row["salary"])
+        executeQuery(query)
+        print("Inserted Into Database")
+
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def TotalBlood():
+    try:
+        query = "select SUM(blood_amount) total FROM BLOOD"
+        executeQuery(query)
+        row = cur.fetchall()
+        print("The total Plasma available is :")
+        print(row)
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def TotalBloodOfGiven():
+    try:
+        a = input("Enter the Plasma type: ")
+        query = "select SUM(blood_amount) FROM BLOOD where blood_type='%s'" % (a)
+        executeQuery(query)
+        row = cur.fetchall()
+        print("The total available Plasma of type", a, "is:")
+        print(row)
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def ViewBlood():
+    try:
+        query = "select * FROM BLOOD"
+        executeQuery(query)
+        row = cur.fetchall()
+        print(row)
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def AddBloodCost():
+    try:
+        row = {}
+        print("Enter following details: ")
+        var0 = input("Plasma bag number: ")
+        row["plasma_bag_number"] = int(var0)
+        row["cost"] = int(input("Plasma Cost: "))
+        query = "INSERT INTO BLOOD_COST(plasma_bag_number,cost) VALUES('%d', '%d')" % (
+        row["plasma_bag_number"], row["cost"])
+        executeQuery(query)
+        print("Inserted Into Database")
+
+    except Exception as e:
+        excepting(e)
+
+    return
+
+
+def excepting(e):
+    con.rollback()
+    print("Failed to insert/delete/update/find database")
+    print(">>>>>>>>>>>>>", e)
+    return
+
+
+def calculateAge(birthDate):
+    days_in_year = 365.2425
+    age = int((date.today() - birthDate).days / days_in_year)
+    return age
+
+
+def dispatch(ch):
+    if (ch == 1):
+        addDonor()
+    if (ch == 2):
+        addDonorInfo()
+    if (ch == 3):
+        addBlood()
+    if (ch == 4):
+        addRecipient()
+    if (ch == 5):
+        hireStaff()
+    if (ch == 6):
+        deleteBlood()
+    if (ch == 7):
+        UpdateBloodCost()
+    if (ch == 8):
+        TotalBlood()
+    if (ch == 9):
+        TotalBloodOfGiven()
+    if (ch == 10):
+        ViewBlood()
+    if (ch == 11):
+        AddBloodCost()
+    if (ch == 12):
+        Supervisors()
+    if (ch == 13):
+        addPaymentTnx()
+    if (ch > 14):
+        print("Error: Invalid Option")
+
+
+# Global
+while (1):
+    tmp = sp.call('cls', shell=True)
+    user = input("Username: ")
+    password = getpass("Password: ")
+
+    try:
+        con = pymysql.connect(host='localhost', user='root', password='', database='PLASMABANK', cursorclass=pymysql.cursors.DictCursor)
+        tmp = sp.call('cls', shell=True)
+
+        if (con.open):
+            print("Connected")
+        else:
+            print("Failed to connect")
+
+        tmp = input("Enter any key to CONTINUE>")
+
+        with con.cursor() as cur:
+            while (1):
+                tmp = sp.call('cls', shell=True)
+                print("1. Add new Plasma donation")
+                print("2. Add new donor information")
+                print("3. Add new Plasma")
+                print("4. Add new recipient")
+                print("5. Hire a new employee")
+                print("6. Delete a Plasma sample")
+                print("7. Change Plasma Cost")
+                print("8. Total Plasma Donated")
+                print("9. Total Plasma of given type Donated")
+                print("10. View Plasma")
+                print("11. Add Plasma cost")
+                print("12. Supervisor List")
+                print("13. Add Transaction Details")
+                print("14. Logout")
+                ch = int(input("Enter choice> "))
+                tmp = sp.call('cls', shell=True)
+                if ch != 14:
+                    dispatch(ch)
+                    tmp = input("Enter any key to CONTINUE>")
+                elif ch == 14:
+                    break
+
+
+    except:
+        tmp = sp.call('cls', shell=True)
+        print("Connection Refused: Either username or password is incorrect or user doesn't have access to database")
+        tmp = input("Enter any key to CONTINUE>")
+
+
+
+................................................................................................................................................................................
+
+DBMS
+
+
+
+
+Enter password: ********
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.25 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2021, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> CREATE SCHEMA `PLASMABANK`;
+Query OK, 1 row affected (0.01 sec)
+
+mysql> USE `PLASMABANK`;
+Database changed
+mysql> CREATE TABLE `BLOOD` (
+    ->   `plasma_bag_number` int(11) NOT NULL,
+    ->   `blood_type` varchar(10) DEFAULT NULL,
+    ->   `blood_amount` varchar(10) DEFAULT NULL,
+    ->   `platelets_count` decimal(5,2) DEFAULT NULL,
+    ->   PRIMARY KEY (`plasma_bag_number`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 1 warning (0.11 sec)
+
+mysql> LOCK TABLES `BLOOD` WRITE;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> INSERT INTO `BLOOD` VALUES (1,'A+','23',2.20);
+Query OK, 1 row affected (0.00 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `BLOOD_COST` (
+    ->   `plasma_bag_number` int(11) NOT NULL,
+    ->   `cost` int(11) DEFAULT NULL,
+    ->   PRIMARY KEY (`plasma_bag_number`),
+    ->   CONSTRAINT `BLOOD_COST_ibfk_1` FOREIGN KEY (`plasma_bag_number`) REFERENCES `BLOOD` (`plasma_bag_number`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 2 warnings (0.10 sec)
+
+mysql> LOCK TABLES `BLOOD_COST` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO `BLOOD_COST` VALUES (1,50);
+Query OK, 1 row affected (0.00 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `COMPANION` (
+    ->   `donor_id` int(11) DEFAULT NULL,
+    ->   `companion_name` varchar(10) DEFAULT NULL,
+    ->   `relationship` varchar(10) DEFAULT NULL,
+    ->   KEY `donor_id` (`donor_id`),
+    ->   CONSTRAINT `COMPANION_ibfk_1` FOREIGN KEY (`donor_id`) REFERENCES `DONORS` (`donor_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+ERROR 1824 (HY000): Failed to open the referenced table 'donors'
+mysql> LOCK TABLES `COMPANION` WRITE;
+ERROR 1146 (42S02): Table 'plasmabank.companion' doesn't exist
+mysql> CREATE TABLE `DONORS` (
+    ->   `donor_id` int(11) NOT NULL,
+    ->   `date_of_donation` date NOT NULL,
+    ->   PRIMARY KEY (`donor_id`,`date_of_donation`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 1 warning (0.09 sec)
+
+mysql> LOCK TABLES `DONORS` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO `DONORS` VALUES (1,'1999-11-11');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> DROP TABLE IF EXISTS `COMPANION`;
+Query OK, 0 rows affected, 1 warning (0.05 sec)
+
+mysql> CREATE TABLE `COMPANION` (
+    ->   `donor_id` int(11) DEFAULT NULL,
+    ->   `companion_name` varchar(10) DEFAULT NULL,
+    ->   `relationship` varchar(10) DEFAULT NULL,
+    ->   KEY `donor_id` (`donor_id`),
+    ->   CONSTRAINT `COMPANION_ibfk_1` FOREIGN KEY (`donor_id`) REFERENCES `DONORS` (`donor_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 1 warning (0.07 sec)
+
+mysql> LOCK TABLES `COMPANION` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `DONOR_INFO` (
+    ->   `donor_id` int(11) NOT NULL,
+    ->   `fname` varchar(30) NOT NULL,
+    ->   `lName` varchar(30) DEFAULT NULL,
+    ->   `blood_type` varchar(30) DEFAULT NULL,
+    ->   `phone_no` varchar(11) DEFAULT NULL,
+    ->   `dOB` date DEFAULT NULL,
+    ->   `age` int(11) DEFAULT NULL,
+    ->   `sex` varchar(10) DEFAULT NULL,
+    ->   `address` char(30) DEFAULT NULL,
+    ->   PRIMARY KEY (`donor_id`),
+    ->   CONSTRAINT `DONOR_INFO_ibfk_1` FOREIGN KEY (`donor_id`) REFERENCES `DONORS` (`donor_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 2 warnings (0.05 sec)
+
+mysql> LOCK TABLES `DONOR_INFO` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO `DONOR_INFO` VALUES (1,'Prateek','Patel','A+',1234321345,'1980-12-05',12,'M','Q01 Sarojini Nagar');
+Query OK, 1 row affected (0.01 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `PAYMENT_TRANSACTION` (
+    ->   `rec_id` int(11) DEFAULT NULL,
+    ->   `payment_amt` int(11) DEFAULT NULL,
+    ->   `payment_time` varchar(40) DEFAULT NULL,
+    ->   KEY `rec_id` (`rec_id`),
+    ->   CONSTRAINT `PAYMENT_TRANSACTION_ibfk_1` FOREIGN KEY (`rec_id`) REFERENCES `RECIPIENT` (`rec_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+ERROR 1824 (HY000): Failed to open the referenced table 'recipient'
+mysql> LOCK TABLES `PAYMENT_TRANSACTION` WRITE;
+ERROR 1146 (42S02): Table 'plasmabank.payment_transaction' doesn't exist
+mysql> INSERT INTO `PAYMENT_TRANSACTION` VALUES (2,100,'06/10/2020 18:19:53');
+ERROR 1146 (42S02): Table 'plasmabank.payment_transaction' doesn't exist
+mysql> CREATE TABLE `RECIPIENT` (
+    ->   `rec_id` int(11) NOT NULL,
+    ->   `blood_type` varchar(10) DEFAULT NULL,
+    ->   `quantity_needed` int(11) DEFAULT NULL,
+    ->   `date_of_request` date DEFAULT NULL,
+    ->   `fname` varchar(10) DEFAULT NULL,
+    ->   `lname` varchar(10) DEFAULT NULL,
+    ->   `dOB` date DEFAULT NULL,
+    ->   `sex` varchar(10) DEFAULT NULL,
+    ->   `age` int(11) DEFAULT NULL,
+    ->   `address` char(30) DEFAULT NULL,
+    ->   PRIMARY KEY (`rec_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 3 warnings (0.07 sec)
+
+mysql> LOCK TABLES `RECIPIENT` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO `RECIPIENT` VALUES (1,'A+',23,'1999-10-10','Veeral','Agarwal','1998-10-10','M',23,'C102, Raj Vihar, Mumbai');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `PAYMENT_TRANSACTION` (
+    ->   `rec_id` int(11) DEFAULT NULL,
+    ->   `payment_amt` int(11) DEFAULT NULL,
+    ->   `payment_time` varchar(40) DEFAULT NULL,
+    ->   KEY `rec_id` (`rec_id`),
+    ->   CONSTRAINT `PAYMENT_TRANSACTION_ibfk_1` FOREIGN KEY (`rec_id`) REFERENCES `RECIPIENT` (`rec_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 2 warnings (0.16 sec)
+
+mysql> LOCK TABLES `PAYMENT_TRANSACTION` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO `PAYMENT_TRANSACTION` VALUES (2,100,'06/10/2020 18:19:53');
+ERROR 1452 (23000): Cannot add or update a child row: a foreign key constraint fails (`plasmabank`.`payment_transaction`, CONSTRAINT `PAYMENT_TRANSACTION_ibfk_1` FOREIGN KEY (`rec_id`) REFERENCES `recipient` (`rec_id`))
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `RECIEVES` (
+    ->   `emp_id` int(11) DEFAULT NULL,
+    ->   `rec_id` int(11) DEFAULT NULL,
+    ->   KEY `rec_id` (`rec_id`),
+    ->   KEY `emp_id` (`emp_id`),
+    ->   CONSTRAINT `RECIEVES_ibfk_1` FOREIGN KEY (`rec_id`) REFERENCES `RECIPIENT` (`rec_id`),
+    ->   CONSTRAINT `RECIEVES_ibfk_2` FOREIGN KEY (`emp_id`) REFERENCES `STAFF` (`emp_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+ERROR 1824 (HY000): Failed to open the referenced table 'staff'
+mysql> LOCK TABLES `RECIEVES` WRITE;
+ERROR 1146 (42S02): Table 'plasmabank.recieves' doesn't exist
+mysql> CREATE TABLE `REGISTERS` (
+    ->   `donor_id` int(11) DEFAULT NULL,
+    ->   `rec_id` int(11) DEFAULT NULL,
+    ->   KEY `rec_id` (`rec_id`),
+    ->   KEY `donor_id` (`donor_id`),
+    ->   CONSTRAINT `REGISTERS_ibfk_1` FOREIGN KEY (`rec_id`) REFERENCES `RECIPIENT` (`rec_id`),
+    ->   CONSTRAINT `REGISTERS_ibfk_2` FOREIGN KEY (`donor_id`) REFERENCES `DONORS` (`donor_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 2 warnings (0.15 sec)
+
+mysql> LOCK TABLES `REGISTERS` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `STAFF` (
+    ->   `emp_id` int(11) NOT NULL,
+    ->   `fname` varchar(10) DEFAULT NULL,
+    ->   `supervisor` varchar(20) DEFAULT NULL,
+    ->   `address1` varchar(10) DEFAULT NULL,
+    ->   `phone_no` int(11) DEFAULT NULL,
+    ->   `salary` int(11) DEFAULT NULL,
+    ->   PRIMARY KEY (`emp_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 3 warnings (0.10 sec)
+
+mysql> LOCK TABLES `STAFF` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO `STAFF` VALUES (1,'Def Gef','Sandy','23 A','1234567890',23411);
+Query OK, 1 row affected (0.00 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `RECIEVES` (
+    ->   `emp_id` int(11) DEFAULT NULL,
+    ->   `rec_id` int(11) DEFAULT NULL,
+    ->   KEY `rec_id` (`rec_id`),
+    ->   KEY `emp_id` (`emp_id`),
+    ->   CONSTRAINT `RECIEVES_ibfk_1` FOREIGN KEY (`rec_id`) REFERENCES `RECIPIENT` (`rec_id`),
+    ->   CONSTRAINT `RECIEVES_ibfk_2` FOREIGN KEY (`emp_id`) REFERENCES `STAFF` (`emp_id`)
+    -> ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+Query OK, 0 rows affected, 2 warnings (0.06 sec)
+
+mysql> LOCK TABLES `RECIEVES` WRITE;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UNLOCK TABLES;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select * from BLOOD;
++-------------------+------------+--------------+-----------------+
+| plasma_bag_number | blood_type | blood_amount | platelets_count |
++-------------------+------------+--------------+-----------------+
+|                 1 | A+         | 23           |            2.20 |
++-------------------+------------+--------------+-----------------+
+1 row in set (0.06 sec)
+
+mysql> select * from BLOOD_COST;
++-------------------+------+
+| plasma_bag_number | cost |
++-------------------+------+
+|                 1 |   50 |
++-------------------+------+
+1 row in set (0.05 sec)
+
+mysql>
+
